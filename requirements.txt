@@ -1,0 +1,11 @@
+
+bcrypt==3.1.7
+fastapi==0.77.1
+py-solc-x==1.1.1
+pydantic==1.9.0
+PyJWT==1.7.1
+python-dotenv==0.16.0
+python-jose==3.3.0
+python-multipart==0.0.5
+
+
