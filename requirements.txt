@@ -7,5 +7,5 @@ PyJWT==1.7.1
 python-dotenv==0.16.0
 python-jose==3.3.0
 python-multipart==0.0.5
-
+flask-sqlalchemy==2.5.1
 

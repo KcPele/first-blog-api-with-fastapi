@@ -1,8 +1,7 @@
 #this is a full crud with auth api with a fake db
 from fastapi import FastAPI
-import routers.users as users, routers.posts as posts
-
-
+import users
+import posts
 
 app = FastAPI()
 

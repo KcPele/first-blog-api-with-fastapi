@@ -1,3 +1,4 @@
 .env
 log.txt
+sql.db
 __pycache__
