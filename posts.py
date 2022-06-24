@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Path, File, Form,UploadFile, HTTPException, status, Depends, BackgroundTasks
+from fastapi import APIRouter, Query, Path, File, Form,UploadFile, HTTPException, status, Depends, Security, BackgroundTasks
 from pydantic import BaseModel
 from typing import Union, List
 from datetime import datetime, timedelta
@@ -6,7 +6,7 @@ from random import randint
 import dependencies
 import main
 # from users import get_current_user
-from schemas import User, Post, PostCreate
+from schemas import User, Post, PostCreate, PostUpdate
 import users
 from sqlalchemy.orm import Session
 import crud
@@ -22,9 +22,9 @@ async def post_dependency_check(post_id: int = Path(default=None), owner: User =
     post_db = crud.get_post(db, post_id=post_id)
     if not post_db:
         raise HTTPException(detail="the data with these id does not exist", status_code=status.HTTP_404_NOT_FOUND)
-    if post_db.owner.username != owner.username:
+    if post_db.owner.id != owner.id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="you are not the owner of these post")
-    return post_id
+    return post_db
 
 # get all blog post
 @router.get("/", response_model=List[Post], status_code=status.HTTP_200_OK)
@@ -36,7 +36,7 @@ async def blog_posts(skip: int = 0, limit: int = 100, db: Session = Depends(depe
 
 # post a blog post
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=Post)
-async def blog_post(active_user: User = Depends(users.get_current_user), title: str = Form(...), 
+async def blog_post(current_user: User = Security(users.get_current_user, scopes=["write"]), title: str = Form(...), 
 description: Union[str, None] = Form(default=None), 
 image: Union[List[UploadFile], None] = File(default=None),
 db: Session = Depends(dependencies.get_db)):
@@ -54,28 +54,15 @@ async def blog_post(post_id: int = Path(default=None), db: Session = Depends(dep
     return post_data
 
 
-# # updata the blog post
-# @router.patch("/{post_id}", status_code=status.HTTP_202_ACCEPTED)
-# async def blog_post(*, post_id: int = Depends(post_dependency_check), title: Union[str, None] = Form(default=None), 
-# description: Union[str, None] = Form(default=None), 
-# image: Union[UploadFile, None] = None):
-#     stored_post_data = fake_blog_db[post_id]
-#     if title is not None:
-#         stored_post_data["title"] = title
-#     if description is not None:
-#         stored_post_data["description"] = description
-#     if image is not None:
-#         stored_post_data["image"] = [image]
-#     return stored_post_data
+@router.patch("/{post_id}", response_model=Post)
+# this will change becase of the image. it will be form type not json
+# it will be similar to blog_post route
+def update_post_for_user(*, post_data: Post = Security(post_dependency_check, scopes=["update"]), post: PostUpdate, db: Session = Depends(dependencies.get_db), current_user: User = Security(users.get_current_user, scopes=["update"])):
+    return crud.update_user_post(db=db, payload=post, post_data=post_data)
 
 
-
-
-#delete a blog post
-# @router.delete("/{post_id}", status_code=status.HTTP_202_ACCEPTED)
-# async def blog_post(post_id: int = Depends(post_dependency_check), db: Session = Depends(dependencies.get_db)):
-#     crud.crud_delete_single_post(db, post_id=post_id)
-#     return {"msg":"successufully deleted"}
-
-
+@router.delete("/{post_id}")
+def delete_posts(post_data: Post = Security(post_dependency_check, scopes=["delete"]), db: Session = Depends(dependencies.get_db)):
+    crud.delete_post(db, post_data=post_data)
+    return 'successfully deleted'
 

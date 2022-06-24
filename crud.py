@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Union, List
 import models
+from fastapi import HTTPException, status
 import schemas
 from passlib.context import CryptContext
 
@@ -79,8 +80,16 @@ image: Union[List, None] = None, created_at: str, user_id: int):
     return db_post
 
 
-# def crud_delete_single_post(db: Session, post_id: int):
-#     stm = models.category.delete().where(models.category.c.id == post_id)
-#     print(stm)
-#     results = db.execute(stm)
-#     db.commit()
+def update_user_post(db: Session, post_data: schemas.Post, payload: schemas.PostUpdate):
+    update_data = payload.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(post_data, key, value)
+        
+    db.add(post_data)
+    db.commit()
+    db.refresh(post_data)
+    return post_data
+
+def delete_post(db: Session, post_data: schemas.Post):
+    db.delete(post_data)
+    db.commit()

@@ -4,16 +4,18 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class PostBase(BaseModel):
-    title: str
     description: Union[str, None] = None
     image: Union[str, None] = None
+    
+class PostCreateBase(PostBase):
+    title: str
     created_at: datetime
-
-class PostCreate(PostBase):
+class PostCreate(PostCreateBase):
     pass
+class PostUpdate(PostBase):
+    title: Union[str, None] = None
 
-
-class Post(PostBase):
+class Post(PostCreateBase):
     id: int
     owner_id: int
 
